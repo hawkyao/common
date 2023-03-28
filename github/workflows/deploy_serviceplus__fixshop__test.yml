@@ -1,0 +1,126 @@
+# 测试环境、serviceplus，fixshop用
+# 调试github 部署
+
+name: deploy serviceplus__fixshop__test
+
+on:
+  workflow_dispatch: 
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled '
+        required: false
+        default: false
+
+      out_dir:
+        type: string
+        description: 'directory for store artifact'
+        required: true
+        default: 'output'
+
+      # server_list:
+      #   type: string
+      #   description: 'Deploye to servers'
+      #   required: true
+      #   default: '[tct-a02.fixshop.tech,tct-a04.fixshop.tech]'
+
+
+
+
+  # push:
+  #   - branches:
+  #     - main:
+    
+env:
+  # can not use these env variables in the caller WF
+  # BUILD_WF_FILENAME: './.github/workflows/build_dnc_prj.yml'
+  # PROJFILE: 服务家对接/服务家对接.csproj
+  # OUT_DIR: output
+  # KEEP_ARTIFACT_DAYS: 1
+
+  DEPLOYER: 'deployer'
+  DEPLOY_SERVER: 'tct-a02.fixshop.tech'
+  DEPLOYSERVER_PORT: 30022
+  DEPLOY_PATH: '/export/site/serviceplus__fixshop__test'
+
+defaults:
+  run:
+    working-directory: '服务家对接'
+
+jobs:
+
+  call_WF_to_build:
+    uses: ./.github/workflows/build_dnc_prj.yml
+    with: 
+      projfile: '服务家对接/服务家对接.csproj'
+      out_dir: ${{ inputs.out_dir }}
+      # disable debug manually
+      #debug_enabled: false
+      keep_artifact_days: 1
+
+  deploy: 
+    needs: call_WF_to_build
+    # if deploy to muilt server ,use next section
+    # strategy:
+    #   matrix:
+    #     deploy_serverX: $ {{ inputs.server_list }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      
+      - name: add conf files to artifact 1/3
+        uses: actions/checkout@v3
+
+      - name: add conf files to artifact 2/3
+        run: |
+          cp 服务家对接/appsettings.ServicePlus__Fixshop__test.json ${{ inputs.out_dir }}/appsettings.test.json
+
+      - name: add conf files to artifact 3/3
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.out_dir }}
+          path: ${{ inputs.out_dir }}
+        #  retention-days:  ${{ inputs.keep_artifact_days }}
+        # if: ${{ inputs.keep_artifact_days > 0 }}
+
+      - name: get artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.out_dir }}
+          path: ${{ inputs.out_dir }}
+
+      - name: create id_rsa file 
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DEPLOYER_CERT }}
+          # name: id_rsa # optional
+          known_hosts: unnecessary
+          # config: $ {{ secrets.CONFIG }} # ssh_config; optional
+          if_key_exists: fail # replace / ignore / fail; optional (defaults to fail)
+
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: false
+        timeout-minutes: 30
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+
+      # - name: create some test file
+      #   run: | 
+      #     mkdir aaa
+      #     mkdir -p $out_dir/abc 
+      #     touch output/abc/1221
+      #     touch output/abc/12x1
+      #     touch output/abc/12a1
+          
+      - name: deploy to server
+        run: |
+          scp -r -P $DEPLOYSERVER_PORT -o StrictHostKeyChecking=no  ${{ inputs.out_dir }}/*  $DEPLOYER@$DEPLOY_SERVER:$DEPLOY_PATH
+          # if deploy to muilt servers ,use next sentence
+          # scp -r -P $DEPLOYSERVER_PORT -o StrictHostKeyChecking=no  ${{ inputs.out_dir }}/*  $DEPLOYER@$ {{ matrix.deploy_serverX }}:$DEPLOY_PATH
+          
+      
+
+
