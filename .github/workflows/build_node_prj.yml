@@ -1,0 +1,92 @@
+# Build nodejs project WF 
+# Reuseabled
+
+name: Build node PRJ
+
+on:
+  workflow_call:
+    inputs:
+      projpath:
+        required: true
+        type: string
+        description: 'project path on the repository'
+        default: './'
+
+      out_dir:
+        required: true
+        type: string
+
+      keep_artifact_days:
+        required: true
+        type: number
+
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled '
+        required: false
+        default: true
+
+      projpath:
+        required: true
+        type: string
+        description: 'project path on the repository,which is workdir."./" indicate top directory '
+        default: './'
+
+      out_dir:
+        required: true
+        description: 'path used for save build result ,and artifact name.'
+        type: string
+        default: output
+      
+      keep_artifact_days:
+        required: true
+        description: 'How many days does the artifact kept.'
+        type: number
+        default: 3
+        
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+
+    - name: install depends and build
+      run: |
+        cd  ${{ inputs.projpath }}
+        npm install
+        npm run build  -- --outDir=${{ inputs.out_dir }}
+
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      with:
+          limit-access-to-actor: false
+      timeout-minutes: 30
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+
+    - name: Keep Artifact 
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.out_dir }}
+        path: ${{ inputs.projpath }}/${{ inputs.out_dir }}
+        retention-days:  ${{ inputs.keep_artifact_days }}
+      if: ${{ inputs.keep_artifact_days > 0 }}
+
+
+
+
+
+
+      
+
+
