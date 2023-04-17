@@ -1,0 +1,12 @@
+[Unit]
+Description= Auto update DDNS 
+
+[Timer]
+Unit=ddns_aliyun.service 
+OnBootSec=20sec
+OnUnitInactiveSec=180sec
+
+
+[Install]
+WantedBy=timers.target
+
