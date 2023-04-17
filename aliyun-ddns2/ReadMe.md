@@ -9,6 +9,7 @@
 
 ddns_aliyun.conf内容
 
+```shell
 {
     "RR": "",   #要注册的域名前缀，为空的时候自动获取主机名
     "Type": "aaaa", #域名类型，支持a和aaaa，为空的时候取a,aaaa；分别创建2条解析
@@ -16,7 +17,7 @@ ddns_aliyun.conf内容
     "ACCESS_KEY": "LTaaaaaaaaaaaaaa",   #你自己的阿里云的Key和Secret，分配最小的权限即可
     "ACCESS_SECRET": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   }
-
+```
 配置文件名默认与执行的py文件名相同，如果不同可以用-c或--config指定
     ./ddna_aliyun.py --config config.conf
 
