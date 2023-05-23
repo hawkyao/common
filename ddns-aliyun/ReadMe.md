@@ -31,7 +31,7 @@ aliyun-python-sdk-core
 ### 基本执行逻辑(暂略)
 
 - 调用_getNewPublicIp从returnip.zanservice.com:8078/ip获取IP地址，可重写该函数
-- 提供IP地址的站点，是直接基于nginx的，配置参见returnip.ngx.conf，可自行部署
+- 提供IP地址的站点，是直接基于nginx的，配置参见returnip.ngx.conf，可自行在具有(V4+V6双栈)公网IP地址的服务器上部署
 - 需要创建3个域名解析(如果仅其中2个)到这个IP地址的获取站点。
 
 - 域名如果已经存在可以覆盖现有ip，未创建则会自动创建；
@@ -45,6 +45,16 @@ ddns_aliyun.service和ddns_aliyun.timer为linux环境下的服务及定时任务
 可执行的ddns_aliyun.py和ddns_aliyun.conf放置在目录/export/script/
 由于system的service默认是以root的用户身份运行，因此如果启用定时运行的话，需要注意包的安装，建议使用root身份进行包安装。
 没有研究过在服务器端(生产环境)部署python虚拟环境、且在后台启动的方法。
+
+### 问题
+#### config文件格式异常
+conf文件需要使用LF作为换行符，windows环境下默认为CRLF，需要进行调整。
+
+#### .py没有运行权限
+默认复制到服务器时，仅644，需要用chmod +x 为ddns_aliyun.py文件授予执行权限。
+
+#### 安装目录
+默认到的.service配置的安装目录为/export/script/ddns_ali/。如果调整，需要更改相应的.service文件。
 
 
 

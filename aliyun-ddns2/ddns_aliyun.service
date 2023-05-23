@@ -1,8 +1,0 @@
-[Unit]
-Description= DDNS over Aliyun
-
-
-[Service]
-ExecStart=/export/script/ddns_aliyun.py --config /export/script/ddns_aliyun.conf
-
-
